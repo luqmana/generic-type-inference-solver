@@ -3,6 +3,8 @@ package constraintsolver;
 import org.checkerframework.framework.type.QualifierHierarchy;
 import org.checkerframework.javacutil.AnnotationUtils;
 
+import checkers.inference.InferenceQualifierHierarchy;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,10 +37,10 @@ public class Lattice {
     public int numTypes;
 
     public void configure() {
-        allTypes = qualHierarchy.getTypeQualifiers();
+        allTypes = getAllTypes();
+        numTypes = allTypes.size();
         top = qualHierarchy.getTopAnnotations().iterator().next();
         bottom = qualHierarchy.getBottomAnnotations().iterator().next();
-        numTypes = qualHierarchy.getTypeQualifiers().size();
         getSubSupertype();
         getIncomparable();
     }
@@ -87,6 +89,15 @@ public class Lattice {
     }
 
     public Set<? extends AnnotationMirror> getAllTypes() {
+        if (this.allTypes == null) {
+            Set<AnnotationMirror> realTypes = new HashSet<>();
+            for (AnnotationMirror qual : qualHierarchy.getTypeQualifiers()) {
+                if (!InferenceQualifierHierarchy.isPolymorphic(qual)) {
+                    realTypes.add(qual);
+                }
+            }
+            this.allTypes = realTypes;
+        }
         return this.allTypes;
     }
 
@@ -96,5 +107,30 @@ public class Lattice {
 
     public static Map<AnnotationMirror, Collection<AnnotationMirror>> getIncomparableType() {
         return latticeInstance.incomparableType;
+    }
+
+    @Override
+    public String toString() { StringBuilder sb = new StringBuilder();
+    sb.append("Supertypes: ");
+    sb.append("[");
+    sb.append(superType);
+    sb.append("]");
+
+    sb.append("\nSubtypes: ");
+    sb.append("[");
+    sb.append(subType);
+    sb.append("]");
+
+    sb.append("\nIncomparableTypes: ");
+    sb.append("[");
+    sb.append(incomparableType);
+    sb.append("]");
+
+    sb.append("\nTop: ");
+    sb.append(top);
+    sb.append("\nBottom: ");
+    sb.append(bottom);
+
+    return sb.toString();
     }
 }
